@@ -8,7 +8,7 @@ const app = express()
 app.use(bodyparser.json())
 app.use(bodyparser.urlencoded({extended:false}))
 
-mongoose.connect(process.env.db,{useNewUrlParser:true},console.log("DB Connected"))
+mongoose.connect(process.env.DB_CONNECT,{useNewUrlParser:true},console.log("DB Connected"))
 
 const schema = mongoose.Schema({
     id:{
@@ -27,38 +27,37 @@ const schema = mongoose.Schema({
 
 const users = new mongoose.model('users',schema)    
 
-app.get('/',(req,res)=>{
-    res.send("Hello")
-})
 
-app.post('/add-user',async (req,res)=>{
-        const data = new users({
-            id:req.body.id,
-            name : req.body.name,
-            hobbies : req.body.hobbies
-        })
-        try {
-            await data.save()
-            res.send("Data added successfully")
-        }catch (error) {
-            res.send(error)
+app.post('/add',async (req,res)=>{
+    const data = new users({
+        id : req.body.id,
+        name : req.body.name,
+        hobbies : req.body.hobbies
+    })
+    try {
+        await data.save()
+        res.send("Data added")
+    }catch (error) {
+        res.send(error)
     }   
 })
 
 app.get('/match/:id',async (req,res)=>{
     const data = await users.find()
-    const new_data = await data.filter(element => element.id != req.params.id)
+    const other_data = await data.filter(element => element.id != req.params.id)
     const user = await data.filter(element => element.id == req.params.id)
     result=[]
-    for(let i=0;i<user[0].hobbies.length;i++){
-        new_data.forEach(element => {
-            if(element.hobbies.includes(user[0].hobbies[i]) && !(result.includes(element))==true){
-                result.push(element)  
-            }
-        });
-    }
-
+    other_data.forEach(element => {
+        if(user[0].hobbies.some(ele => element.hobbies.includes(ele))){
+            result.push(element)
+        }
+    });
+    
     res.send(result)
 })
 
-app.listen(3000,console.log("Listening on port 3000"))    
+app.get('/',(req,res)=>{
+    res.send("Hello")
+})
+
+app.listen(4000,console.log("Listening on port 4000"))    
